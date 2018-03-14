@@ -52,7 +52,6 @@ sub test_ModulWithConstructor_butIgnore {
     $Mockify->mock('DummyMethodForTestOverriding')->when()->thenReturn('Injected');
     my $FakeModuleForMockifyTest = $Mockify->getMockObject();
     is($FakeModuleForMockifyTest->DummyMethodForTestOverriding(), 'Injected', "$SubTestName - Prove that the mock still works");
-    is($FakeModuleForMockifyTest->returnParameterListNew(), undef, "$SubTestName - Prove that the parameters was never used.");
 
     return;
 }

@@ -10,10 +10,12 @@ use Test::Mockify;
 use Test::Exception;
 use Test::Mockify::Matcher qw (
         Number
+        String
     );
 use t::TestDummies::DummyStaticToolsUser;
 use Test::Mockify::Verify qw (GetParametersFromMockifyCall GetCallCount);
 use t::TestDummies::DummyStaticTools;
+use t::TestDummies::DummyStaticToolsUser_Static;
 #----------------------------------------------------------------------------------------
 sub testPlan{
     my $self = shift;
@@ -24,6 +26,8 @@ sub testPlan{
     $self->test_InjectionOfStaticedMethod_Verify_spy();
     $self->test_functionNameFormatingErrorHandling_mock ();
     $self->test_functionNameFormatingErrorHandling_spy ();
+    $self->test_parameterMatchingAndRetrieval_staticFunction();
+    $self->test_parameterMatchingAndRetrieval_instanceFunction();
 }
 
 #----------------------------------------------------------------------------------------
@@ -183,6 +187,55 @@ sub test_functionNameFormatingErrorHandling_spy {
                    qr/The function you like to spy needs to be defined with a fully qualified path. e.g. 'Path::To::Your::OnlyFunctionName' instead of only 'OnlyFunctionName'/sm,
                    "$SubTestName - prove the an incomplete name will fail"
     );
+}
+#----------------------------------------------------------------------------------------
+sub test_parameterMatchingAndRetrieval_staticFunction {
+    my $self = shift;
+    my $SubTestName = (caller(0))[3];
+
+    my $originalResult = t::TestDummies::DummyStaticToolsUser_Static::parameterTestForStaticFunction();
+
+    {
+        my $mockify = Test::Mockify->new('t::TestDummies::DummyStaticToolsUser_Static');
+        $mockify->spyStatic('TestDummies::FakeModuleWithoutNew::dummyMethodWithParameterReturn')->when(String('First'), String('Second'));
+
+        my $SUT = $mockify->getMockObject();
+
+        my $spiedResult = $SUT->parameterTestForStaticFunction();
+
+        is($spiedResult, $originalResult, "$SubTestName - Spied result is the same as the original result");
+
+        my $parameters = GetParametersFromMockifyCall($SUT, 'TestDummies::FakeModuleWithoutNew::dummyMethodWithParameterReturn');
+
+        is_deeply($parameters, ['First', 'Second'], "$SubTestName - The parameters seen by the spy are correct");
+    }
+}
+#----------------------------------------------------------------------------------------
+sub test_parameterMatchingAndRetrieval_instanceFunction {
+    my $self = shift;
+    my $SubTestName = (caller(0))[3];
+
+    my $originalResult = t::TestDummies::DummyStaticToolsUser_Static::parameterTestForInstanceFunction();
+
+    {
+        my $mockify = Test::Mockify->new('t::TestDummies::DummyStaticToolsUser_Static');
+        # Causes the parameter matching to fail, because the instance ($self) is passed in as the first parameter before the explicit ones
+        # Using whenAny allows the parameter matching to pass
+        $mockify->spyStatic('TestDummies::FakeModuleForMockifyTest::dummyMethodWithParameterReturn')->when(String('First'), String('Second'));
+
+        my $SUT = $mockify->getMockObject();
+
+        my $spiedResult = $SUT->parameterTestForInstanceFunction();
+
+        is($spiedResult, $originalResult, "$SubTestName - Spied result is the same as the original result");
+
+        # The same issue arises when getting the parameters
+        # This returns three parameters instead of two: [instance, 'First', 'Second']
+        # This doesn't seem like the way it should work. The static version above works as expected.
+        my $parameters = GetParametersFromMockifyCall($SUT, 'TestDummies::FakeModuleForMockifyTest::dummyMethodWithParameterReturn');
+
+        is_deeply($parameters, ['First', 'Second'], "$SubTestName - The parameters seen by the spy are correct");
+    }
 }
 __PACKAGE__->RunTest();
 1;

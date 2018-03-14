@@ -4,6 +4,8 @@ use warnings;
 use FindBin;
 use lib ($FindBin::Bin.'/..');
 use t::TestDummies::DummyStaticTools;
+use TestDummies::FakeModuleForMockifyTest;
+use TestDummies::FakeModuleWithoutNew;
 
 
 sub useDummyStaticTools {
@@ -20,5 +22,14 @@ sub OverrideDummyFunctionUser {
 sub _OverrideDummyFunction {
     my ($Value) = @_;
     return "(_OverrideDummyFunction: '$Value')";
+}
+
+sub parameterTestForInstanceFunction {
+    my $instance = TestDummies::FakeModuleForMockifyTest->new();
+    return $instance->dummyMethodWithParameterReturn('First', 'Second');
+}
+
+sub parameterTestForStaticFunction {
+    return TestDummies::FakeModuleWithoutNew::dummyMethodWithParameterReturn('First', 'Second');
 }
 1;
