@@ -20,3 +20,12 @@ sub HelloSpy {
 sub HappyOverride {
     return 'original in FakeStaticTools';
 }
+
+sub parameterTestForStaticFunction {
+    return FakeModuleWithoutNew::dummyMethodWithParameterReturn('First', 'Second');
+}
+
+sub parameterTestForInstanceFunction {
+    my $instance = FakeModuleForMockifyTest->new();
+    return $instance->dummyMethodWithParameterReturn('First', 'Second');
+}

@@ -33,6 +33,8 @@ sub testPlan {
     $self->test_mockDogStaticApproach();
     $self->test_newNotCalled();
 #    $self->test_mockSUT();
+#    $self->test_parameterMatchingAndRetrieval_staticFunction();
+#    $self->test_parameterMatchingAndRetrieval_instanceFunction();
 }
 #----------------------------------------------------------------------------------------
 sub test_mockStatic {
@@ -231,6 +233,52 @@ sub test_mockSUT {
     FakeModuleStaticInjection->client();
 
     ok(WasCalled($injector, 'dependency'), "$SubTestName - prove SUT can be mocked directly")
+}
+
+#----------------------------------------------------------------------------------------
+sub test_parameterMatchingAndRetrieval_staticFunction {
+    my $self = shift;
+    my $SubTestName = (caller(0))[3];
+
+    my $originalResult = FakeStaticTools::parameterTestForStaticFunction();
+
+    {
+        my $injector = Test::Mockify::Injector->new('FakeModuleWithoutNew');
+        $injector->spy('dummyMethodWithParameterReturn')->when(String('First'), String('Second'));
+
+        my $spiedResult = FakeStaticTools::parameterTestForStaticFunction();
+
+        is($spiedResult, $originalResult, "$SubTestName - Spied result is the same as the original result");
+
+        my $parameters = GetParametersFromMockifyCall($injector, 'dummyMethodWithParameterReturn');
+
+        is_deeply($parameters, ['First', 'Second'], "$SubTestName - The parameters seen by the spy are correct");
+    }
+}
+#----------------------------------------------------------------------------------------
+sub test_parameterMatchingAndRetrieval_instanceFunction {
+    my $self = shift;
+    my $SubTestName = (caller(0))[3];
+
+    my $originalResult = FakeStaticTools::parameterTestForInstanceFunction();
+
+    {
+        my $injector = Test::Mockify::Injector->new('FakeModuleForMockifyTest');
+        # Causes the parameter matching to fail, because the instance ($self) is passed in as the first parameter before the explicit ones
+        # Using whenAny allows the parameter matching to pass
+        $injector->spy('dummyMethodWithParameterReturn')->when(String('First'), String('Second'));
+
+        my $spiedResult = FakeStaticTools::parameterTestForInstanceFunction();
+
+        is($spiedResult, $originalResult, "$SubTestName - Spied result is the same as the original result");
+
+        # The same issue arises when getting the parameters
+        # This returns three parameters instead of two: [instance, 'First', 'Second']
+        # This doesn't seem like the way it should work. The static version above works as expected.
+        my $parameters = GetParametersFromMockifyCall($injector, 'dummyMethodWithParameterReturn');
+
+        is_deeply($parameters, ['First', 'Second'], "$SubTestName - The parameters seen by the spy are correct");
+    }
 }
 
 __PACKAGE__->RunTest();
