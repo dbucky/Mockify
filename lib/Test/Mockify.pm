@@ -35,7 +35,7 @@ Test::Mockify - minimal mocking framework for perl
     $App->do_something();
 
     # verify that the mocked method was called
-    ok(WasCalled($MockedLogger, 'log'), 'log was called');
+    ok(WasCalled($MockObjectBuilder, 'log'), 'log was called');
     done_testing();
 
 =head1 DESCRIPTION
@@ -93,7 +93,7 @@ For example, the next line will create a method spy of the method log, but only 
     $SampleLogger->log('abc', 123);
 
     # verify that the spied method was called
-    is_deeply(GetParametersFromMockifyCall($MockedLogger, 'log'),['abc', 123], 'Check parameters of first call');
+    is_deeply(GetParametersFromMockifyCall($MockObjectBuilder, 'log'),['abc', 123], 'Check parameters of first call');
 
 =head4 when
 
