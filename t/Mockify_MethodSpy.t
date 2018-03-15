@@ -83,9 +83,9 @@ sub integrationTest_Verify {
         'proves that an unexpected value will throw an Error.'
     );
 
-    is(GetCallCount($FakeModule,'returnParameterListNew'),2 , 'proves that the get call count works fine');
-    is(WasCalled($FakeModule,'DummyMethodForTestOverriding'),1 , 'proves that the verifyer for wasCalled works fine');
-    is(GetParametersFromMockifyCall($FakeModule,'DummyMethodForTestOverriding')->[0],'SomeParameter' , 'proves that the verifyer for getparams. works fine');
+    is(GetCallCount($Mockify,'returnParameterListNew'),2 , 'proves that the get call count works fine');
+    is(WasCalled($Mockify,'DummyMethodForTestOverriding'),1 , 'proves that the verifyer for wasCalled works fine');
+    is(GetParametersFromMockifyCall($Mockify,'DummyMethodForTestOverriding')->[0],'SomeParameter' , 'proves that the verifyer for getparams. works fine');
 }
 
 #------------------------------------------------------------------------

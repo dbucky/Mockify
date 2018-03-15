@@ -51,14 +51,14 @@ sub GetParametersFromMockifyCall {
     if( not IsValid( $MethodName )){
         Error('Method name must be specified', {'Position'=>$Position, 'Package' => $PackageName});
     }
-    if ( not $MockifiedMockedObject->can('__getParametersFromMockifyCall') ){
+    if ( not $MockifiedMockedObject->can('_getParametersFromMockifyCall') ){
         Error("$PackageName was not mockified", { 'Position'=>$Position, 'Method' => $MethodName});
     }
     if( !( $Position ) || !(IsInteger( $Position ))){
         $Position = 0;
     }
 
-    return $MockifiedMockedObject->__getParametersFromMockifyCall( $MethodName, $Position );
+    return $MockifiedMockedObject->_getParametersFromMockifyCall( $MethodName, $Position );
 }
 
 #----------------------------------------------------------------------------------------=

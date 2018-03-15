@@ -8,7 +8,7 @@ use warnings;
 
 sub getMockObject {
     my $self = shift;
-    return $self->getVerifier();
+    return $self->_mockedSelf();
 }
 
 1;

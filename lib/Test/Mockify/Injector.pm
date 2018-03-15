@@ -23,14 +23,15 @@ sub _addMock {
     my ($MethodName, $Method) = @_;
 
     ExistsMethod( $self->_mockedModulePath(), $MethodName );
-    my $mockedSelf = $self->_mockedSelf();
-    $mockedSelf->{'__MethodCallCounter'}->addMethod( $MethodName );
+    my $methodCallCounter = $self->{'__MethodCallCounter'};
+    my $mockifyParams = $self->{'__MockifyParams'};
+    $methodCallCounter->addMethod( $MethodName );
     if(not $self->{'MethodStore'}{$MethodName}){
         $self->{'MethodStore'}{$MethodName} //= $Method;
         my $MockedMethodBody = sub {
             my @MockedParameters = @_;
-            $mockedSelf->{'__MethodCallCounter'}->increment( $MethodName );
-            push @{$mockedSelf->{$MethodName.'_MockifyParams'}}, \@MockedParameters;
+            $methodCallCounter->increment( $MethodName );
+            push @{$mockifyParams->{$MethodName}}, \@MockedParameters;
             return $Method->call(@MockedParameters);
         };
         $self->{'override'}->replace($self->_mockedModulePath().'::'.$MethodName, $MockedMethodBody);
@@ -109,9 +110,8 @@ Example usage
     SUT->sendMessage('a@b.c', 'Happy birthday!');
     SUT->sendMessage('x@y.z', 'Happy Holidays!');
 
-    my $verifier = $injector->getVerifier();
-    ok(WasCalled($verifier, 'send'), 'The mailer's send method was called');
-    is(GetCallCount($verifier, 'send'), 2, 'The mailer's send method was called twice');
+    ok(WasCalled($injector, 'send'), 'The mailer's send method was called');
+    is(GetCallCount($injector, 'send'), 2, 'The mailer's send method was called twice');
 
     1;
 

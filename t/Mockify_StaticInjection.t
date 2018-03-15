@@ -76,17 +76,17 @@ sub test_verify_with_mockAndSpy{
     is(FakeModuleStaticInjection->useImportedStaticFunction('German'), 'German: Hallo Welt',"$SubTestName - prove that the same mock can handle also the imported call - german");
     is(FakeModuleStaticInjection->useImportedStaticFunctionSpy('And you are?'), 'And you are?: Bond, James Bond!', "$SubTestName - prove static spy Works.");
 
-    ok( WasCalled($injector->getVerifier(), 'ReturnHelloWorld'), "$SubTestName - prove verify, independent of scope and call type");
+    ok( WasCalled($injector, 'ReturnHelloWorld'), "$SubTestName - prove verify, independent of scope and call type");
     # TODO: Experiment with incorporating the imported and non-imported version into one Test::Mockify::Injector instance to let this work
-#    is( GetCallCount($injector->getVerifier(), 'ReturnHelloWorld'),  2,"$SubTestName - prove that 'ReturnHelloWorld' was called 2 times, independent of call type");
+#    is( GetCallCount($injector, 'ReturnHelloWorld'),  2,"$SubTestName - prove that 'ReturnHelloWorld' was called 2 times, independent of call type");
 
-    my $aParamsCall1 = GetParametersFromMockifyCall($injector->getVerifier(), 'ReturnHelloWorld', 0);
+    my $aParamsCall1 = GetParametersFromMockifyCall($injector, 'ReturnHelloWorld', 0);
     is(scalar @{$aParamsCall1}, 1 , "$SubTestName - prove amount of parameters");
     is($aParamsCall1->[0], 'German' , "$SubTestName - prove that the value of parameter 1 is 'German'");
-#
-    ok( WasCalled($injector->getVerifier(), 'HelloSpy'), "$SubTestName - prove verify, independent of scope and call type");
-#    is(GetCallCount($injector->getVerifier(),'HelloSpy'), 2,"$SubTestName - prove verify works for spy");
-    my $aParamsCallHelloSpy = GetParametersFromMockifyCall($injector->getVerifier(), 'HelloSpy', 0);
+
+    ok( WasCalled($injector, 'HelloSpy'), "$SubTestName - prove verify, independent of scope and call type");
+#    is(GetCallCount($injector,'HelloSpy'), 2,"$SubTestName - prove verify works for spy");
+    my $aParamsCallHelloSpy = GetParametersFromMockifyCall($injector, 'HelloSpy', 0);
     is(scalar @{$aParamsCallHelloSpy}, 1 , "$SubTestName - prove amount of parameters for 'HelloSpy'");
     is($aParamsCallHelloSpy->[0], 'And you are?' , "$SubTestName - prove that the value of parameter 1 of helloSpy is 'And you are?'");
 }
@@ -141,7 +141,7 @@ sub test_someSelectedMockifyFeatures {
     # normal spy
     FakeModuleStaticInjection->overrideMethod_spy('spyme'); #1
     FakeModuleStaticInjection->overrideMethod_spy('spyme'); #2
-    is(GetCallCount($injector2->getVerifier(), 'overrideMethod_spy'), 2, "$SubTestName - prove verify works for override");
+    is(GetCallCount($injector2, 'overrideMethod_spy'), 2, "$SubTestName - prove verify works for override");
 }
 #----------------------------------------------------------------------------------------
 sub test_mockRevertsWhenInjectorGoesOutOfScope {
@@ -152,24 +152,21 @@ sub test_mockRevertsWhenInjectorGoesOutOfScope {
     my $originalValue2 = FakeModuleForMockifyTest::secondDummyMethodForTestOverriding();
     my $mockValue = 'A mock dummy method';
     my $mockValue2 = 'A second mock dummy method';
-    my $verifier;
 
     {
         my $injector = Test::Mockify::Injector->new('FakeModuleForMockifyTest');
         $injector->mock('DummyMethodForTestOverriding')->when()->thenReturn($mockValue);
         $injector->addMock('secondDummyMethodForTestOverriding', sub { return $mockValue2; });
-        $verifier = $injector->getVerifier();
 
         is(FakeModuleForMockifyTest::DummyMethodForTestOverriding(), $mockValue, "$SubTestName - prove mock is injected");
         is(FakeModuleForMockifyTest::secondDummyMethodForTestOverriding(), $mockValue2, "$SubTestName - prove second mock is injected");
 
         # make sure GetParametersFromMockifyCall doesn't interfere with releasing the $injector when it goes out of scope
-        GetParametersFromMockifyCall($injector->getVerifier(), 'DummyMethodForTestOverriding');
+        GetParametersFromMockifyCall($injector, 'DummyMethodForTestOverriding');
     }
 
     is(FakeModuleForMockifyTest::DummyMethodForTestOverriding(), $originalValue, "$SubTestName - prove mock is reverted");
     is(FakeModuleForMockifyTest::secondDummyMethodForTestOverriding(), $originalValue2, "$SubTestName - prove second mock is reverted");
-    ok(WasCalled($verifier, 'DummyMethodForTestOverriding'), "$SubTestName - prove verifier can live past injector");
 }
 #----------------------------------------------------------------------------------------
 sub test_thisTestIsNotAffectedByPrevious {
@@ -193,7 +190,7 @@ sub test_mockDogOriginalApproach {
     is($mockObject->breed(), 'Great Dane', "$SubTestName - Mock is a Great Dane");
     is($dog->breed(), 'Dalmatian', "$SubTestName - Original is a Dalmatian");
 
-    ok(WasCalled($mockObject, 'breed'), "$SubTestName - Mocked breed method was called");
+    ok(WasCalled($mockify, 'breed'), "$SubTestName - Mocked breed method was called");
 }
 #----------------------------------------------------------------------------------------
 sub test_mockDogStaticApproach {
@@ -209,8 +206,8 @@ sub test_mockDogStaticApproach {
     is(Dog->breed(), 'Great Dane', "$SubTestName - Mock is a Great Dane");
     is($dog->breed(), 'Great Dane', "$SubTestName - Original is now a Great Dane");
 
-    ok(WasCalled($injector->getVerifier(), 'breed'), "$SubTestName - Mocked breed method was called");
-    is(GetCallCount($injector->getVerifier(), 'breed'), 2, "$SubTestName - Called twice");
+    ok(WasCalled($injector, 'breed'), "$SubTestName - Mocked breed method was called");
+    is(GetCallCount($injector, 'breed'), 2, "$SubTestName - Called twice");
 }
 #----------------------------------------------------------------------------------------
 sub test_newNotCalled() {
@@ -218,10 +215,10 @@ sub test_newNotCalled() {
     my $SubTestName = (caller(0))[3];
 
     my $mockify = Test::Mockify->new('Dog', ['Dalmatian']);
-    ok($mockify->getMockObject()->isa('Dog'), "$SubTestName - mock object isa Dog");
+    ok($mockify->_mockedSelf()->isa('Dog'), "$SubTestName - mock object isa Dog");
 
     my $injector = Test::Mockify::Injector->new('Dog');
-    ok(!$injector->getVerifier()->isa('Dog'), "$SubTestName - verifier isnota Dog");
+    ok(!$injector->_mockedSelf()->isa('Dog'), "$SubTestName - verifier isnota Dog");
 }
 #----------------------------------------------------------------------------------------
 sub test_mockSUT {
@@ -233,7 +230,7 @@ sub test_mockSUT {
 
     FakeModuleStaticInjection->client();
 
-    ok(WasCalled($injector->getVerifier(), 'dependency'), "$SubTestName - prove SUT can be mocked directly")
+    ok(WasCalled($injector, 'dependency'), "$SubTestName - prove SUT can be mocked directly")
 }
 
 __PACKAGE__->RunTest();

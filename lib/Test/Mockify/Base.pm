@@ -60,11 +60,6 @@ sub spy {
         });
 }
 
-sub getVerifier {
-    my $self = shift;
-    return $self->_mockedSelf();
-}
-
 ### DEPRECATED >>>
 sub addMock {
     my $self = shift;
@@ -165,9 +160,9 @@ sub _mockedSelf {
 
 sub _initMockedModule {
     my $self = shift;
-    $self->_mockedSelf()->{'__MethodCallCounter'} = Test::Mockify::MethodCallCounter->new();
-    $self->_mockedSelf()->{'__isMockified'} = 1;
-    $self->_addGetParameterFromMockifyCall();
+    $self->{'__isMockified'} = 1;
+    $self->{'__MethodCallCounter'} = Test::Mockify::MethodCallCounter->new();
+    $self->{'__MockifyParams'} = {};
     return;
 }
 
@@ -190,46 +185,40 @@ sub _addMock {
     my ($MethodName, $Method) = @_;
 
     ExistsMethod( $self->_mockedModulePath(), $MethodName );
-    $self->_mockedSelf()->{'__MethodCallCounter'}->addMethod( $MethodName );
+    my $methodCallCounter = $self->{'__MethodCallCounter'};
+    my $mockifyParams = $self->{'__MockifyParams'};
+    $methodCallCounter->addMethod( $MethodName );
     if(not $self->{'MethodStore'}{$MethodName}){
         $self->{'MethodStore'}{$MethodName} //= $Method;
         $self->_mockedSelf()->mock($MethodName, sub {
                 my $MockedSelf = shift;
                 my @MockedParameters = @_;
-                $MockedSelf->{'__MethodCallCounter'}->increment( $MethodName );
-                push @{$MockedSelf->{$MethodName.'_MockifyParams'}}, \@MockedParameters;
+                $methodCallCounter->increment( $MethodName );
+                push @{$mockifyParams->{$MethodName}}, \@MockedParameters;
                 return $Method->call(@MockedParameters);
             });
     }
     return $self->{'MethodStore'}{$MethodName};
 }
 
-sub _addGetParameterFromMockifyCall {
+sub _getParametersFromMockifyCall {
     my $self = shift;
+    my ( $MethodName, $Position ) = @_;
 
-    $self->_mockedSelf()->mock('__getParametersFromMockifyCall',
-        sub{
-            my $MockedSelf = shift;
-            my ( $MethodName, $Position ) = @_;
-
-            my $aParametersFromAllCalls = $MockedSelf->{$MethodName.'_MockifyParams'};
-            if( ref $aParametersFromAllCalls ne 'ARRAY' ){
-                Error( "$MethodName was not called" );
-            }
-            if( scalar @{$aParametersFromAllCalls} < $Position ) {
-                Error( "$MethodName was not called ".( $Position+1 ).' times',{
-                        'Method' => "$MethodName",
-                        'Postion' => $Position,
-                    } );
-            }
-            else {
-                my $ParameterFromMockifyCall = $MockedSelf->{$MethodName.'_MockifyParams'}[$Position];
-                return $ParameterFromMockifyCall;
-            }
-            return;
-        }
-    );
-
+    my $aParametersFromAllCalls = $self->{'__MockifyParams'}->{$MethodName};
+    if( ref $aParametersFromAllCalls ne 'ARRAY' ){
+        Error( "$MethodName was not called" );
+    }
+    if( scalar @{$aParametersFromAllCalls} < $Position ) {
+        Error( "$MethodName was not called ".( $Position+1 ).' times',{
+            'Method' => "$MethodName",
+            'Postion' => $Position,
+        } );
+    }
+    else {
+        my $ParameterFromMockifyCall = $self->{'__MockifyParams'}->{$MethodName}[$Position];
+        return $ParameterFromMockifyCall;
+    }
     return;
 }
 

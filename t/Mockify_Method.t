@@ -136,9 +136,9 @@ sub integrationTest_Verify {
     is($FakeModule->DummyMethodForTestOverriding('SomeParameter'),'SomeReturnValue' , 'proves that defining mulitiple return types are supported');
     is($FakeModule->secondDummyMethodForTestOverriding('SomeParameter'),'SecondReturnValue' , 'proves that defining an other method with the same parameter works fine');
 
-    is(GetCallCount($FakeModule,'DummyMethodForTestOverriding'),2 , 'proves that the get call count works fine');
-    is(WasCalled($FakeModule,'secondDummyMethodForTestOverriding'),1 , 'proves that the verifyer for wasCalled works fine');
-    is(GetParametersFromMockifyCall($FakeModule,'secondDummyMethodForTestOverriding')->[0],'SomeParameter' , 'proves that the verifyer for getparams. works fine');
+    is(GetCallCount($Mockify,'DummyMethodForTestOverriding'),2 , 'proves that the get call count works fine');
+    is(WasCalled($Mockify,'secondDummyMethodForTestOverriding'),1 , 'proves that the verifyer for wasCalled works fine');
+    is(GetParametersFromMockifyCall($Mockify,'secondDummyMethodForTestOverriding')->[0],'SomeParameter' , 'proves that the verifyer for getparams. works fine');
 }
 __PACKAGE__->RunTest();
 1;
