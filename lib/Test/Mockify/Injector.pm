@@ -4,7 +4,7 @@ use parent 'Test::Mockify::Base';
 use strict;
 use warnings;
 
-use Test::Mockify::Tools qw ( LoadPackage ExistsMethod );
+use Test::Mockify::Tools qw ( LoadPackage ExistsMethod GetExplicitParameters );
 use Sub::Override;
 
 sub new {
@@ -28,13 +28,15 @@ sub _addMock {
     $methodCallCounter->addMethod( $MethodName );
     if(not $self->{'MethodStore'}{$MethodName}){
         $self->{'MethodStore'}{$MethodName} //= $Method;
+        my $package = $self->_mockedModulePath();
         my $MockedMethodBody = sub {
             my @MockedParameters = @_;
+            my @ExplicitParameters = GetExplicitParameters($package, @MockedParameters);
             $methodCallCounter->increment( $MethodName );
-            push @{$mockifyParams->{$MethodName}}, \@MockedParameters;
+            push @{$mockifyParams->{$MethodName}}, \@ExplicitParameters;
             return $Method->call(@MockedParameters);
         };
-        $self->{'override'}->replace($self->_mockedModulePath().'::'.$MethodName, $MockedMethodBody);
+        $self->{'override'}->replace($package.'::'.$MethodName, $MockedMethodBody);
     }
     return $self->{'MethodStore'}{$MethodName};
 }

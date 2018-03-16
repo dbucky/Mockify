@@ -6,6 +6,17 @@ our $VERSION = '1.3';
 use strict;
 use warnings;
 
+sub spy {
+    my $self = shift;
+    my ($MethodName) = @_;
+    my $PointerOriginalMethod = \&{$self->_mockedModulePath().'::'.$MethodName};
+    my $mockedSelf = $self->_mockedSelf();
+    #In order to have the current object available in the parameter list, it has to be injected here.
+    return $self->_addMockWithMethodSpy($MethodName, sub {
+        return $PointerOriginalMethod->($mockedSelf, @_);
+    });
+}
+
 sub getMockObject {
     my $self = shift;
     return $self->_mockedSelf();

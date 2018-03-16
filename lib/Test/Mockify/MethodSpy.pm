@@ -7,8 +7,8 @@ use warnings;
 #---------------------------------------------------------------------
 sub new {
     my $class = shift;
-    my ($OriginalMethodPointer) = @_;
-    my $self = $class->SUPER::new();
+    my ($OriginalMethodPointer, $package) = @_;
+    my $self = $class->SUPER::new($package);
     $self->{'OriginalMethodPointer'} = $OriginalMethodPointer;
     return $self;
 }

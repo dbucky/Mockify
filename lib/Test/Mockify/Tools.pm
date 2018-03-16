@@ -11,6 +11,7 @@ our @EXPORT_OK = qw (
         IsValid
         LoadPackage
         Isa
+        GetExplicitParameters
     );
 
 #------------------------------------------------------------------------
@@ -95,7 +96,26 @@ sub Error {
     );
     
     die($ErrorOutput);
-}   
+}
+#------------------------------------------------------------------------
+sub GetExplicitParameters {
+    my ($package, @Parameters) = @_;
+
+    return @Parameters unless $package;
+
+    my @ExplicitParameters = @Parameters;
+    my $firstParameter = $ExplicitParameters[0] if scalar @ExplicitParameters;
+
+    if ($firstParameter) {
+        $firstParameter =~ s/=[^=]+$//; # remove =HASH(0x1234abc)
+
+        if ($firstParameter eq $package) {
+            shift @ExplicitParameters;
+        }
+    }
+
+    return @ExplicitParameters;
+}
 
 
 1;

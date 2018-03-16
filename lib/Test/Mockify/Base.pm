@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use Test::Mockify::TypeTests qw ( IsString IsArrayReference );
-use Test::Mockify::Tools qw ( LoadPackage ExistsMethod Error );
+use Test::Mockify::Tools qw ( LoadPackage ExistsMethod Error GetExplicitParameters );
 use Test::Mockify::MethodCallCounter;
 use Test::Mockify::Method;
 use Test::Mockify::MethodSpy;
@@ -53,10 +53,9 @@ sub spy {
     my $self = shift;
     my ($MethodName) = @_;
     my $PointerOriginalMethod = \&{$self->_mockedModulePath().'::'.$MethodName};
-    my $mockedSelf = $self->_mockedSelf();
     #In order to have the current object available in the parameter list, it has to be injected here.
     return $self->_addMockWithMethodSpy($MethodName, sub {
-            return $PointerOriginalMethod->($mockedSelf, @_);
+            return $PointerOriginalMethod->(@_);
         });
 }
 
@@ -170,14 +169,14 @@ sub _addMockWithMethod {
     my $self = shift;
     my ( $MethodName ) = @_;
     $self->_testMockTypeUsage($MethodName);
-    return $self->_addMock($MethodName, Test::Mockify::Method->new());
+    return $self->_addMock($MethodName, Test::Mockify::Method->new($self->_mockedModulePath()));
 }
 
 sub _addMockWithMethodSpy {
     my $self = shift;
     my ( $MethodName, $PointerOriginalMethod ) = @_;
     $self->_testMockTypeUsage($MethodName);
-    return $self->_addMock($MethodName, Test::Mockify::MethodSpy->new($PointerOriginalMethod));
+    return $self->_addMock($MethodName, Test::Mockify::MethodSpy->new($PointerOriginalMethod, $self->_mockedModulePath()));
 }
 
 sub _addMock {
@@ -190,11 +189,13 @@ sub _addMock {
     $methodCallCounter->addMethod( $MethodName );
     if(not $self->{'MethodStore'}{$MethodName}){
         $self->{'MethodStore'}{$MethodName} //= $Method;
+        my $package = $self->_mockedModulePath();
         $self->_mockedSelf()->mock($MethodName, sub {
                 my $MockedSelf = shift;
                 my @MockedParameters = @_;
+                my @ExplicitParameters = GetExplicitParameters($package, @MockedParameters);
                 $methodCallCounter->increment( $MethodName );
-                push @{$mockifyParams->{$MethodName}}, \@MockedParameters;
+                push @{$mockifyParams->{$MethodName}}, \@ExplicitParameters;
                 return $Method->call(@MockedParameters);
             });
     }

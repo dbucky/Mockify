@@ -13,7 +13,6 @@ L<Test::Mockify::Method> is used to provide the chained mock setup
 =cut
 package Test::Mockify::Method;
 use Test::Mockify::Parameter;
-use Data::Dumper;
 use Test::Mockify::TypeTests qw (
         IsInteger
         IsFloat
@@ -24,14 +23,18 @@ use Test::Mockify::TypeTests qw (
         IsCodeReference
 );
 use Test::Mockify::Matcher qw (SupportedTypes);
+use Test::Mockify::Tools qw (GetExplicitParameters);
 use Scalar::Util qw( blessed );
+use Data::Dumper;
 use strict;
 use warnings;
 
 #---------------------------------------------------------------------
 sub new {
     my $Class = shift;
+    my $package = shift;
     my $self  = bless {
+        'Package'=> $package,
         'TypeStore'=> undef,
         'MatcherStore'=> undef,
         'AnyStore'=> undef,
@@ -159,24 +162,25 @@ C<call> will be called with a list of parameters. If the signature of this param
 sub call {
     my $self = shift;
     my @Parameters = @_;
+    my @ExplicitParameters = GetExplicitParameters($self->{'Package'}, @Parameters);
     my $SignatureKey = '';
-    for(my $i = 0; $i < scalar @Parameters; $i++){
+    for(my $i = 0; $i < scalar @ExplicitParameters; $i++){
         if($self->{'AnyStore'}->[$i] && $self->{'AnyStore'}->[$i] eq 'any'){
             $SignatureKey .= 'any';
         }else{
-            $SignatureKey .= $self->_getType($Parameters[$i]);
+            $SignatureKey .= $self->_getType($ExplicitParameters[$i]);
         }
     }
     if($self->{'TypeStore'}{'UsedWithWhenAny'}){
-        return $self->{'TypeStore'}{'UsedWithWhenAny'}->[0]->call(@Parameters);
+        return $self->{'TypeStore'}{'UsedWithWhenAny'}->[0]->call(@ExplicitParameters);
     }else {
         foreach my $ExistingParameter (@{$self->{'TypeStore'}{$SignatureKey}}){
-            if($ExistingParameter->matchWithExpectedParameters(@Parameters)){
+            if($ExistingParameter->matchWithExpectedParameters(@ExplicitParameters)){
                 return $ExistingParameter->call(@Parameters);
             }
         }
     }
-    die ("No matching found for $SignatureKey -> ".Dumper(\@Parameters));
+    die ("No matching found for $SignatureKey -> ".Dumper(\@ExplicitParameters));
 }
 #---------------------------------------------------------------------
 sub _getType{

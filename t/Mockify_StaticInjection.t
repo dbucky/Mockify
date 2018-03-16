@@ -26,15 +26,15 @@ sub testPlan {
     $self->test_mockStatic();
     $self->test_verify_with_mockAndSpy();
     $self->test_MethodAndImportedFunctionHaveTheSameName();
-#    $self->test_someSelectedMockifyFeatures();
+    $self->test_someSelectedMockifyFeatures();
     $self->test_mockRevertsWhenInjectorGoesOutOfScope();
     $self->test_thisTestIsNotAffectedByPrevious();
     $self->test_mockDogOriginalApproach();
     $self->test_mockDogStaticApproach();
     $self->test_newNotCalled();
-#    $self->test_mockSUT();
-#    $self->test_parameterMatchingAndRetrieval_staticFunction();
-#    $self->test_parameterMatchingAndRetrieval_instanceFunction();
+    $self->test_mockSUT();
+    $self->test_parameterMatchingAndRetrieval_staticFunction();
+    $self->test_parameterMatchingAndRetrieval_instanceFunction();
 }
 #----------------------------------------------------------------------------------------
 sub test_mockStatic {
@@ -228,7 +228,7 @@ sub test_mockSUT {
     my $SubTestName = (caller(0))[3];
 
     my $injector = Test::Mockify::Injector->new('FakeModuleStaticInjection');
-    $injector->spy('dependency')->when();
+    $injector->spy('dependency')->when(String('client'));
 
     FakeModuleStaticInjection->client();
 
