@@ -17,7 +17,7 @@ use lib ($FindBin::Bin);
 use parent 'TestBase';
 use Test::Exception;
 use Test::Mockify::Method;
-use Test::Mockify;
+use Test::Mockify::Instance;
 use Test::More;
 #------------------------------------------------------------------------
 sub testPlan{
@@ -165,8 +165,8 @@ sub _MockifiedObjectCheck {
     my $Method = Test::Mockify::Method->new();
     $Method->when(Object('FakeModuleForMockifyTest'))->thenReturn('Result for mockified Object.');
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest');
-    my $MockedFakeModuleForMockifyTest = $Mockify->getMockObject();
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest');
+    my $MockedFakeModuleForMockifyTest = $Mockify->getInstance();
 
     is($Method->call($MockedFakeModuleForMockifyTest), 'Result for mockified Object.', 'Match mocked Objects');
     return;

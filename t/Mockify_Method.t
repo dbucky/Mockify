@@ -5,7 +5,7 @@ use lib ($FindBin::Bin);
 use parent 'TestBase';
 use Test::More;
 use Test::Exception;
-use Test::Mockify;
+use Test::Mockify::Instance;
 use Test::Mockify::Matcher qw (
         String
         Number
@@ -35,22 +35,22 @@ sub testPlan{
 sub integrationTest_AnyTypes {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String(), Number(), HashRef(), ArrayRef(), Object(), Function(), Undef(), Any())->thenReturn('Its matched');
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
     is($FakeModule->DummyMethodForTestOverriding('a', 1, {}, [], bless({},'a'), sub{}, undef, 'a'),'Its matched' , 'proves that all parameter types are working');
 }
 #------------------------------------------------------------------------
 sub integrationTest_ExpectedTypes {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('a'))->thenReturn('string');
     $Mockify->mock('DummyMethodForTestOverriding')->when(Number(123))->thenReturn('number');
     $Mockify->mock('DummyMethodForTestOverriding')->when(HashRef({1=>23}))->thenReturn('hashref');
     $Mockify->mock('DummyMethodForTestOverriding')->when(ArrayRef([1, 23]))->thenReturn('arrayref');
     $Mockify->mock('DummyMethodForTestOverriding')->when(Object('Hello::World'))->thenReturn('object');
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
 
     is($FakeModule->DummyMethodForTestOverriding('a'),'string' , 'proves that the expected string matcher is working.');
     is($FakeModule->DummyMethodForTestOverriding(123),'number' , 'proves that the expected number matcher is working.');
@@ -62,18 +62,18 @@ sub integrationTest_ExpectedTypes {
 sub integrationTest_WhenAny {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->whenAny()->thenReturn('Its called');
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
     is($FakeModule->DummyMethodForTestOverriding('a', 1, {}),'Its called' , 'proves that any is working');
 }
 #------------------------------------------------------------------------
 sub integrationTest_thenCall {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('Parameter'))->thenCall(sub{return $_[0].'_test';});
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
 
     is($FakeModule->DummyMethodForTestOverriding('Parameter'),'Parameter_test' , 'proves than thenCall is working.');
 }
@@ -81,9 +81,9 @@ sub integrationTest_thenCall {
 sub integrationTest_thenReturnArray {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('Parameter'))->thenReturnArray(['a', 'b']);
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
 
     my @ReturnValue = $FakeModule->DummyMethodForTestOverriding('Parameter');
     is_deeply(\@ReturnValue, ['a', 'b'], 'proves that an Array was returned.');
@@ -92,9 +92,9 @@ sub integrationTest_thenReturnArray {
 sub integrationTest_thenReturnHash {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('Parameter'))->thenReturnHash({'a'=> 'b'});
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
 
     my %ReturnValue = $FakeModule->DummyMethodForTestOverriding('Parameter');
     is_deeply(\%ReturnValue, {'a'=> 'b'}, 'proves that a hash was returned.');
@@ -103,9 +103,9 @@ sub integrationTest_thenReturnHash {
 sub integrationTest_thenReturnUndef {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('Parameter'))->thenReturnUndef();
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
 
     is($FakeModule->DummyMethodForTestOverriding('Parameter'), undef, 'proves that a hash was returned.');
 }
@@ -113,9 +113,9 @@ sub integrationTest_thenReturnUndef {
 sub integrationTest_thenThrowError {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('Parameter'))->thenThrowError('HelloError');
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
 
     throws_ok( sub { $FakeModule->DummyMethodForTestOverriding('Parameter') },
         qr/HelloError/,
@@ -126,11 +126,11 @@ sub integrationTest_thenThrowError {
 sub integrationTest_Verify {
     my $self = shift;
 
-    my $Mockify = Test::Mockify->new('FakeModuleForMockifyTest', []);
+    my $Mockify = Test::Mockify::Instance->new('FakeModuleForMockifyTest', []);
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('Parameter'))->thenReturn('ReturnValue');
     $Mockify->mock('DummyMethodForTestOverriding')->when(String('SomeParameter'))->thenReturn('SomeReturnValue');
     $Mockify->mock('secondDummyMethodForTestOverriding')->when(String('SomeParameter'))->thenReturn('SecondReturnValue');
-    my $FakeModule = $Mockify->getMockObject();
+    my $FakeModule = $Mockify->getInstance();
 
     is($FakeModule->DummyMethodForTestOverriding('Parameter'),'ReturnValue' , 'proves that the parameters will be passed');
     is($FakeModule->DummyMethodForTestOverriding('SomeParameter'),'SomeReturnValue' , 'proves that defining mulitiple return types are supported');

@@ -5,7 +5,7 @@ use FindBin;
 use lib ($FindBin::Bin);
 
 use parent 'TestBase';
-use Test::Mockify;
+use Test::Mockify::Instance;
 use Test::More;
 use warnings;
 no warnings 'deprecated';
@@ -18,9 +18,9 @@ sub test_MockModule {
     my $self = shift;
     my $SubTestName = (caller(0))[3];
 
-    my $MockObject = Test::Mockify->new('FakeModuleWithoutNew');
-    my $MockedFakeModule = $MockObject->getMockObject();
-    is($MockedFakeModule->secondDummyMethodForTestOverriding(),'A second dummy method',"$SubTestName - test if the loaded module still have the unmocked methods");
+    my $mockifyInstance = Test::Mockify::Instance->new('FakeModuleWithoutNew');
+    my $mockFakeModule = $mockifyInstance->getInstance();
+    is($mockFakeModule->secondDummyMethodForTestOverriding(),'A second dummy method',"$SubTestName - test if the loaded module still have the unmocked methods");
 
     return;
 }

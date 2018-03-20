@@ -1,4 +1,4 @@
-package Test::Mockify::Injector;
+package Test::Mockify::Class;
 use parent 'Test::Mockify::Base';
 
 use strict;
@@ -47,13 +47,13 @@ sub _addMock {
 
 =head1 NAME
 
-Test::Mockify::Injector - use L<Test::Mockify>'s robust API to override real functionality with mock implementations
+Test::Mockify::Class - use L<Test::Mockify>'s robust API to override real functionality with mock implementations
 
 =head2 mock
 
 Sometimes it is not possible to inject test dependencies into your system under test (SUT).
 This could be the case for a variety of reasons, namely the SUT instantiates a new object instance, calls
-a static method, or imports a function from another module. L<Test::Mockify::Injector> allows you to redefine the behavior
+a static method, or imports a function from another module. L<Test::Mockify::Class> allows you to redefine the behavior
 of those dependencies for which you can't provide a test double.
 
     package SUT;
@@ -74,7 +74,7 @@ Example usage
 
     package Test_SUT;
 
-    my $injector = Test::Mockify::Injector->new('Mailer');
+    my $injector = Test::Mockify::Class->new('Mailer');
     $injector->mock('send')->when(String('this@will.fail'), String("You're invited!"))->thenReturn(0);
     $injector->mock('send')->when(String('this@will.succeed'), String("You're invited!"))->thenReturn(1);
 
@@ -106,7 +106,7 @@ Example usage
 
     package Test_SUT;
 
-    my $injector = Test::Mockify::Injector->new('Mailer');
+    my $injector = Test::Mockify::Class->new('Mailer');
     $injector->spy('send')->whenAny();
 
     SUT->sendMessage('a@b.c', 'Happy birthday!');

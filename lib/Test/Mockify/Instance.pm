@@ -1,4 +1,4 @@
-package Test::Mockify;
+package Test::Mockify::Instance;
 use parent 'Test::Mockify::Base';
 
 our $VERSION = '1.3';
@@ -17,7 +17,7 @@ sub spy {
     });
 }
 
-sub getMockObject {
+sub getInstance {
     my $self = shift;
     return $self->_mockedSelf();
 }
@@ -115,7 +115,7 @@ To define the signature in the needed structure you must use the L<< Test::Mocki
 If you don't want to specify the method signature at all, you can use whenAny.
 It is not possible to mix C<whenAny> and C<when> for the same method.
 
-=head2 getMockObject
+=head2 getInstance
 
 Provides the actual mock object, which you can use in the test.
 

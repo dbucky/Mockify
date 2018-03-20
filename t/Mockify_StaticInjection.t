@@ -5,8 +5,8 @@ use lib ($FindBin::Bin);
 
 use parent 'TestBase';
 use Test::Exception;
-use Test::Mockify;
-use Test::Mockify::Injector;
+use Test::Mockify::Instance;
+use Test::Mockify::Class;
 use Test::Mockify::Verify qw (WasCalled GetCallCount GetParametersFromMockifyCall);
 use Test::More;
 use Test::Mockify::Matcher qw (String Number);
@@ -41,19 +41,19 @@ sub test_mockStatic {
     my $self = shift;
     my $SubTestName = (caller(0))[3];
 
-    my $injector = Test::Mockify::Injector->new('FakeStaticTools');
-    $injector->mock('ReturnHelloWorld')->when(String('German'))->thenReturn('Hallo Welt');
-    $injector->mock('ReturnHelloWorld')->when(String('Spanish'))->thenReturn('Hola Mundo');
-    $injector->mock('ReturnHelloWorld')->when(String('Esperanto'))->thenReturn('Saluton mondon');
+    my $mockifyFakeStaticToolsClass = Test::Mockify::Class->new('FakeStaticTools');
+    $mockifyFakeStaticToolsClass->mock('ReturnHelloWorld')->when(String('German'))->thenReturn('Hallo Welt');
+    $mockifyFakeStaticToolsClass->mock('ReturnHelloWorld')->when(String('Spanish'))->thenReturn('Hola Mundo');
+    $mockifyFakeStaticToolsClass->mock('ReturnHelloWorld')->when(String('Esperanto'))->thenReturn('Saluton mondon');
 
     is(FakeModuleStaticInjection->useStaticFunction('German'), 'German: Hallo Welt',"$SubTestName - prove full path call- german");
     is(FakeModuleStaticInjection->useStaticFunction('Spanish'), 'Spanish: Hola Mundo',"$SubTestName - prove full path call - spanish");
     is(FakeModuleStaticInjection->useStaticFunction('Esperanto'), 'Esperanto: Saluton mondon',"$SubTestName - prove full path call, scope independent- german");
 
-    my $injectorImported = Test::Mockify::Injector->new('FakeModuleStaticInjection');
-    $injectorImported->mock('ReturnHelloWorld')->when(String('German'))->thenReturn('Hallo Welt');
-    $injectorImported->mock('ReturnHelloWorld')->when(String('Spanish'))->thenReturn('Hola Mundo');
-    $injectorImported->mock('ReturnHelloWorld')->when(String('Esperanto'))->thenReturn('Saluton mondon');
+    my $mockifyFakeModuleStaticInjectionClass = Test::Mockify::Class->new('FakeModuleStaticInjection');
+    $mockifyFakeModuleStaticInjectionClass->mock('ReturnHelloWorld')->when(String('German'))->thenReturn('Hallo Welt');
+    $mockifyFakeModuleStaticInjectionClass->mock('ReturnHelloWorld')->when(String('Spanish'))->thenReturn('Hola Mundo');
+    $mockifyFakeModuleStaticInjectionClass->mock('ReturnHelloWorld')->when(String('Esperanto'))->thenReturn('Saluton mondon');
 
     is(FakeModuleStaticInjection->useImportedStaticFunction('German'), 'German: Hallo Welt',"$SubTestName - prove that the same mock can handle also the imported call - german");
     is(FakeModuleStaticInjection->useImportedStaticFunction('Spanish'), 'Spanish: Hola Mundo',"$SubTestName - prove imported call - spanish");
@@ -64,31 +64,31 @@ sub test_verify_with_mockAndSpy{
     my $self = shift;
     my $SubTestName = (caller(0))[3];
 
-    my $injector = Test::Mockify::Injector->new('FakeStaticTools');
-    $injector->mock('ReturnHelloWorld')->when(String('German'))->thenReturn('Hallo Welt');
-    $injector->spy('HelloSpy')->when(String('And you are?'));
+    my $mockifyFakeStaticToolsClass = Test::Mockify::Class->new('FakeStaticTools');
+    $mockifyFakeStaticToolsClass->mock('ReturnHelloWorld')->when(String('German'))->thenReturn('Hallo Welt');
+    $mockifyFakeStaticToolsClass->spy('HelloSpy')->when(String('And you are?'));
 
     is(FakeModuleStaticInjection->useStaticFunction('German'), 'German: Hallo Welt',"$SubTestName - prove full path call- german");
     is(FakeModuleStaticInjection->useStaticFunctionSpy('And you are?'), 'And you are?: Bond, James Bond!', "$SubTestName - prove static spy Works");
 
-    my $injectorImported = Test::Mockify::Injector->new('FakeModuleStaticInjection');
+    my $injectorImported = Test::Mockify::Class->new('FakeModuleStaticInjection');
     $injectorImported->mock('ReturnHelloWorld')->when(String('German'))->thenReturn('Hallo Welt');
     $injectorImported->spy('HelloSpy')->when(String('And you are?'));
 
     is(FakeModuleStaticInjection->useImportedStaticFunction('German'), 'German: Hallo Welt',"$SubTestName - prove that the same mock can handle also the imported call - german");
     is(FakeModuleStaticInjection->useImportedStaticFunctionSpy('And you are?'), 'And you are?: Bond, James Bond!', "$SubTestName - prove static spy Works.");
 
-    ok( WasCalled($injector, 'ReturnHelloWorld'), "$SubTestName - prove verify, independent of scope and call type");
-    # TODO: Experiment with incorporating the imported and non-imported version into one Test::Mockify::Injector instance to let this work
-#    is( GetCallCount($injector, 'ReturnHelloWorld'),  2,"$SubTestName - prove that 'ReturnHelloWorld' was called 2 times, independent of call type");
+    ok( WasCalled($mockifyFakeStaticToolsClass, 'ReturnHelloWorld'), "$SubTestName - prove verify, independent of scope and call type");
+    # TODO: Experiment with incorporating the imported and non-imported version into one Test::Mockify::Class instance to let this work
+#    is( GetCallCount($mockifyFakeStaticToolsClass, 'ReturnHelloWorld'),  2,"$SubTestName - prove that 'ReturnHelloWorld' was called 2 times, independent of call type");
 
-    my $aParamsCall1 = GetParametersFromMockifyCall($injector, 'ReturnHelloWorld', 0);
+    my $aParamsCall1 = GetParametersFromMockifyCall($mockifyFakeStaticToolsClass, 'ReturnHelloWorld', 0);
     is(scalar @{$aParamsCall1}, 1 , "$SubTestName - prove amount of parameters");
     is($aParamsCall1->[0], 'German' , "$SubTestName - prove that the value of parameter 1 is 'German'");
 
-    ok( WasCalled($injector, 'HelloSpy'), "$SubTestName - prove verify, independent of scope and call type");
-#    is(GetCallCount($injector,'HelloSpy'), 2,"$SubTestName - prove verify works for spy");
-    my $aParamsCallHelloSpy = GetParametersFromMockifyCall($injector, 'HelloSpy', 0);
+    ok( WasCalled($mockifyFakeStaticToolsClass, 'HelloSpy'), "$SubTestName - prove verify, independent of scope and call type");
+#    is(GetCallCount($mockifyFakeStaticToolsClass,'HelloSpy'), 2,"$SubTestName - prove verify works for spy");
+    my $aParamsCallHelloSpy = GetParametersFromMockifyCall($mockifyFakeStaticToolsClass, 'HelloSpy', 0);
     is(scalar @{$aParamsCallHelloSpy}, 1 , "$SubTestName - prove amount of parameters for 'HelloSpy'");
     is($aParamsCallHelloSpy->[0], 'And you are?' , "$SubTestName - prove that the value of parameter 1 of helloSpy is 'And you are?'");
 }
@@ -97,8 +97,8 @@ sub test_MethodAndImportedFunctionHaveTheSameName {
     my $self = shift;
     my $SubTestName = (caller(0))[3];
 
-    my $injector = Test::Mockify::Injector->new('FakeStaticTools');
-    my $injectorImported = Test::Mockify::Injector->new('FakeModuleStaticInjection');
+    my $injector = Test::Mockify::Class->new('FakeStaticTools');
+    my $injectorImported = Test::Mockify::Class->new('FakeModuleStaticInjection');
 
     # Perl can't differ between imported and actual methods of a package.
     # Since this package implements a method which is also imported as static function,
@@ -118,12 +118,12 @@ sub test_someSelectedMockifyFeatures {
     my $self = shift;
     my $SubTestName = (caller(0))[3];
 
-    my $injector = Test::Mockify::Injector->new('FakeStaticTools');
+    my $injector = Test::Mockify::Class->new('FakeStaticTools');
     $injector->mock('ReturnHelloWorld')->when(String('Error'))->thenThrowError('TestError');
     $injector->mock('ReturnHelloWorld')->when(String('caller'))->thenCall(sub{return 'returnValue'});
     $injector->mock('ReturnHelloWorld')->when(String('undef'), String('abc'))->thenReturnUndef();
 
-    my $injector2 = Test::Mockify::Injector->new('FakeModuleStaticInjection');
+    my $injector2 = Test::Mockify::Class->new('FakeModuleStaticInjection');
     $injector2->mock('overrideMethod')->when(String('override'))->thenReturn('overridden Value');
     $injector2->spy('overrideMethod_spy')->when(String('spyme'));
 
@@ -156,7 +156,7 @@ sub test_mockRevertsWhenInjectorGoesOutOfScope {
     my $mockValue2 = 'A second mock dummy method';
 
     {
-        my $injector = Test::Mockify::Injector->new('FakeModuleForMockifyTest');
+        my $injector = Test::Mockify::Class->new('FakeModuleForMockifyTest');
         $injector->mock('DummyMethodForTestOverriding')->when()->thenReturn($mockValue);
         $injector->addMock('secondDummyMethodForTestOverriding', sub { return $mockValue2; });
 
@@ -185,9 +185,9 @@ sub test_mockDogOriginalApproach {
     my $dog = Dog->new('Dalmatian');
     is($dog->breed(), 'Dalmatian', "$SubTestName - Original is a Dalmatian");
 
-    my $mockify = Test::Mockify->new('Dog', ['Dalmatian']);
+    my $mockify = Test::Mockify::Instance->new('Dog', ['Dalmatian']);
     $mockify->mock('breed')->whenAny()->thenReturn('Great Dane');
-    my $mockObject = $mockify->getMockObject();
+    my $mockObject = $mockify->getInstance();
 
     is($mockObject->breed(), 'Great Dane', "$SubTestName - Mock is a Great Dane");
     is($dog->breed(), 'Dalmatian', "$SubTestName - Original is a Dalmatian");
@@ -202,7 +202,7 @@ sub test_mockDogStaticApproach {
     my $dog = Dog->new('Dalmatian');
     is($dog->breed(), 'Dalmatian', "$SubTestName - Original is a Dalmatian");
 
-    my $injector = Test::Mockify::Injector->new('Dog'); # should not call Dog->new() or need constructor parameters
+    my $injector = Test::Mockify::Class->new('Dog'); # should not call Dog->new() or need constructor parameters
     $injector->mock('breed')->whenAny()->thenReturn('Great Dane');
 
     is(Dog->breed(), 'Great Dane', "$SubTestName - Mock is a Great Dane");
@@ -216,10 +216,10 @@ sub test_newNotCalled() {
     my $self = shift;
     my $SubTestName = (caller(0))[3];
 
-    my $mockify = Test::Mockify->new('Dog', ['Dalmatian']);
+    my $mockify = Test::Mockify::Instance->new('Dog', ['Dalmatian']);
     ok($mockify->_mockedSelf()->isa('Dog'), "$SubTestName - mock object isa Dog");
 
-    my $injector = Test::Mockify::Injector->new('Dog');
+    my $injector = Test::Mockify::Class->new('Dog');
     ok(!$injector->_mockedSelf()->isa('Dog'), "$SubTestName - verifier isnota Dog");
 }
 #----------------------------------------------------------------------------------------
@@ -227,7 +227,7 @@ sub test_mockSUT {
     my $self = shift;
     my $SubTestName = (caller(0))[3];
 
-    my $injector = Test::Mockify::Injector->new('FakeModuleStaticInjection');
+    my $injector = Test::Mockify::Class->new('FakeModuleStaticInjection');
     $injector->spy('dependency')->when(String('client'));
 
     FakeModuleStaticInjection->client();
@@ -243,7 +243,7 @@ sub test_parameterMatchingAndRetrieval_staticFunction {
     my $originalResult = FakeStaticTools::parameterTestForStaticFunction();
 
     {
-        my $injector = Test::Mockify::Injector->new('FakeModuleWithoutNew');
+        my $injector = Test::Mockify::Class->new('FakeModuleWithoutNew');
         $injector->spy('dummyMethodWithParameterReturn')->when(String('First'), String('Second'));
 
         my $spiedResult = FakeStaticTools::parameterTestForStaticFunction();
@@ -263,7 +263,7 @@ sub test_parameterMatchingAndRetrieval_instanceFunction {
     my $originalResult = FakeStaticTools::parameterTestForInstanceFunction();
 
     {
-        my $injector = Test::Mockify::Injector->new('FakeModuleForMockifyTest');
+        my $injector = Test::Mockify::Class->new('FakeModuleForMockifyTest');
         # Causes the parameter matching to fail, because the instance ($self) is passed in as the first parameter before the explicit ones
         # Using whenAny allows the parameter matching to pass
         $injector->spy('dummyMethodWithParameterReturn')->when(String('First'), String('Second'));
