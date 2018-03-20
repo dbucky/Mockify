@@ -106,12 +106,8 @@ sub GetExplicitParameters {
     my @ExplicitParameters = @Parameters;
     my $firstParameter = $ExplicitParameters[0] if scalar @ExplicitParameters;
 
-    if ($firstParameter) {
-        $firstParameter =~ s/=[^=]+$//; # remove =HASH(0x1234abc)
-
-        if ($firstParameter eq $package) {
-            shift @ExplicitParameters;
-        }
+    if ($firstParameter && (blessed $firstParameter && $firstParameter->isa($package) || $firstParameter eq $package)) {
+        shift @ExplicitParameters;
     }
 
     return @ExplicitParameters;
