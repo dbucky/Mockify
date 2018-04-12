@@ -33,7 +33,7 @@ sub testPlan{
     $self->_FunctionCall();
     $self->_MixedExpectedMatcherAndAnyMatcher_Error();
     $self->_MixedAnyMatcherWithDifferentTypes();
-    $self->_DefineSignatureTwice_Error();
+    $self->_RedefineSignature();
     $self->_UndefinedSignature_Error();
     $self->_UndefinedType_Error();
     return;
@@ -50,7 +50,7 @@ sub _SignatureWithAnyMatcherAndExpectedMatcher {
     $Method = Test::Mockify::Method->new();
     $Method->when(String(), String('World'))->thenReturn('Hello');    
     is($Method->call('jaja','World'), 'Hello', 'first any, second expected');
-    is($Method->call('something','World'), 'Hello', 'first expected, second any');
+    is($Method->call('something','World'), 'Hello', 'first any, second expected');
 }
 #---------------------------------------------------------------------------------
 sub _MultipleAnyMatcher {
@@ -75,10 +75,6 @@ sub _AnyMatcher {
     is($Method->call(bless({},'Test::Package')), 'Result for one any.', 'single any parameter type object');
     is($Method->call(sub{}), 'Result for one any.', 'single any parameter type sub');
     is($Method->call(undef), 'Result for one any.', 'single any parameter type undef');
-    throws_ok( sub { $Method->when( Any() )->thenReturn('Hello World'); },
-               qr/It is not possible two add two times the same method Signature./,
-               'proves that it is not possbible to create two expectations for any'
-     );
     throws_ok( sub { $Method->when( String() )->thenReturn('Hello World'); },
                qr/It is not possibel to mix "specific type" with previously set "any type"./,
                'proves that it is not possible to use a specific type after an any type was set.'
@@ -98,10 +94,6 @@ sub _AnyParameter {
     is($Method->call(),'helloWorld' , 'proves that "whenAny" works without parameters.');;
     is($Method->call(123),'helloWorld' , 'proves that "whenAny" works one parameter.');;
     is($Method->call('abc',['abc']),'helloWorld' , 'proves that the same"whenAny" works with two parameter.');
-    throws_ok( sub { $Method->whenAny()->thenReturn('WaterWorld') },
-               qr/"whenAny" can only used once. Also it is not possible to use a mixture between "when" and "whenAny"/,
-               'proves that it is not possible to use "whenAny" two times.'
-     );
     throws_ok( sub { $Method->when(String('abc'))->thenReturn('WaterWorld') },
                qr/It is not possible to use a mixture between "when" and "whenAny"/,
                'proves that it is not possible to use "when" when "whenAny" was used before.'
@@ -114,7 +106,7 @@ sub _AnyParameter {
      $Method = Test::Mockify::Method->new();
      $Method->when(String())->thenReturn('helloWorld');
     throws_ok( sub { $Method->whenAny()->thenReturn('WaterWorld') },
-               qr/"whenAny" can only used once. Also it is not possible to use a mixture between "when" and "whenAny"/,
+               qr/It is not possible to use a mixture between "when" and "whenAny"/,
                'proves that it is not possible to use "whenAny" when "when" was used before.'
      );
 }
@@ -220,21 +212,38 @@ sub _MixedAnyMatcherWithDifferentTypes {
 
 } 
 #---------------------------------------------------------------------------------
-sub _DefineSignatureTwice_Error{
+sub _RedefineSignature{
     my $self = shift;
     
     my $Method = Test::Mockify::Method->new();
-    $Method->when(String('FirstString'))->thenReturn('Result for two strings.');
-    throws_ok( sub { $Method->when( String('FirstString') )->thenReturn('Hello World'); },
-               qr/It is not possible two add two times the same method Signature./,
-               'define signature twice - expected matcher'
-     );
+    $Method->when(String('Parameter'))->thenReturn('Hello');
+    is($Method->call('Parameter'), 'Hello', 'The original return value defined for the Type Parameter is returned.');
+    $Method->when(String('Parameter'))->thenReturn('World');
+    is($Method->call('Parameter'), 'World', 'The new return value defined for the same Type Parameter is returned.');
+
     $Method = Test::Mockify::Method->new();
-    $Method->when(String())->thenReturn('Result for two strings.');
-    throws_ok( sub { $Method->when( String() )->thenReturn('Hello World'); },
-               qr/It is not possible two add two times the same method Signature./,
-               'define signature twice - any matcher'
-     );
+    $Method->when(String())->thenReturn('Hello');
+    is($Method->call('Parameter'), 'Hello', 'The original return value defined for the Type Matcher is returned.');
+    $Method->when(String())->thenReturn('World');
+    is($Method->call('Parameter'), 'World', 'The new return value defined for the same Type Matcher is returned.');
+
+    $Method = Test::Mockify::Method->new();
+    $Method->when(Any())->thenReturn('Hello');
+    is($Method->call('Parameter'), 'Hello', 'The original return value defined for the Any Matcher is returned.');
+    $Method->when(Any())->thenReturn('World');
+    is($Method->call('Parameter'), 'World', 'The new return value defined for the same Any Matcher is returned.');
+
+    $Method = Test::Mockify::Method->new();
+    $Method->whenAny()->thenReturn('Hello');
+    is($Method->call('Parameter'), 'Hello', 'The original return value defined for the WhenAny is returned.');
+    $Method->whenAny()->thenReturn('World');
+    is($Method->call('Parameter'), 'World', 'The new return value defined for the same WhenAny is returned.');
+
+    $Method = Test::Mockify::Method->new();
+    $Method->when()->thenReturn('Hello');
+    is($Method->call(), 'Hello', 'The original return value defined for the When is returned.');
+    $Method->when()->thenReturn('World');
+    is($Method->call(), 'World', 'The new return value defined for the same When is returned.');
 }
 #---------------------------------------------------------------------------------
 sub _UndefinedSignature_Error {

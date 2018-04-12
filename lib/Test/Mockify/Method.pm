@@ -85,8 +85,10 @@ It is not possible to mix C<whenAny> with C<when>.
 sub whenAny {
     my $self = shift;
     die ('"whenAny" don`t allow any parameters' ) if (@_);
-    if((scalar keys %{$self->{'TypeStore'}})){
-        die('"whenAny" can only used once. Also it is not possible to use a mixture between "when" and "whenAny"');
+    my $numKeys = scalar keys %{$self->{'TypeStore'}};
+    my $whenAny = $self->{'TypeStore'}{'UsedWithWhenAny'};
+    if($numKeys && ($numKeys > 1 || !$whenAny)){
+        die('It is not possible to use a mixture between "when" and "whenAny"');
     }
     return $self->_addToTypeStore(['UsedWithWhenAny']);
 }
@@ -103,12 +105,6 @@ sub _checkExpectedParameters{
         $self->{'MatcherStore'}{$Type}->[$i] = $NewExpectedParameter;
         $self->_testAnyStore($self->{'AnyStore'}->[$i], $Type);
         $self->{'AnyStore'}->[$i] = $Type;
-    }
-
-    foreach my $ExistingParameter (@{$self->{'TypeStore'}{$SignatureKey}}){
-        if($ExistingParameter->compareExpectedParameters($NewExpectedParameters)){
-            die('It is not possible two add two times the same method Signature.');
-        }
     }
 }
 
@@ -146,6 +142,14 @@ sub _addToTypeStore {
     my $self = shift;
     my ($Signature, $NewExpectedParameters) = @_;
     my $SignatureKey = join('',@$Signature);
+
+    # if existing parameter with the same signature and expected params exists, return it
+    foreach my $ExistingParameter (@{$self->{'TypeStore'}{$SignatureKey}}) {
+        if ($ExistingParameter->compareExpectedParameters($NewExpectedParameters)) {
+            return $ExistingParameter->buildReturn();
+        }
+    }
+
     my $Parameter = Test::Mockify::Parameter->new($NewExpectedParameters);
     push(@{$self->{'TypeStore'}{$SignatureKey}}, $Parameter );
     return $Parameter->buildReturn();
